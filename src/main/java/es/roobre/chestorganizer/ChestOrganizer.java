@@ -171,7 +171,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param amount Maximum amount of items to remove
      * @return The number of items that could not be removed, if amount was higher than the total number of items in the inventory
      */
-    private int removeItems(Inventory src, Material type, int amount) {
+    private static int removeItems(Inventory src, Material type, int amount) {
         List<ItemStack> stackList = src.all(type).values().stream()
         		.sorted(Comparator.comparingInt(ItemStack::getAmount))
         		.collect(Collectors.toList());
@@ -196,7 +196,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param mat   Item to look for
      * @return A suitable chest (as InventoryHolder), or null if it wasn't suitable
      */
-    private Container isSuitableReceiver(BlockState block, Material mat) {
+    private static Container isSuitableReceiver(BlockState block, Material mat) {
     	// TODO: add array of accepted types of containers instead (just like we check it for the source)
         if (block instanceof Container) {
             Container container = (Container) block;
@@ -216,7 +216,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param holder The holder to check
      * @return Whether the chest is an organizer or not
      */
-    private boolean isOrganizer(InventoryHolder holder) {
+    private static boolean isOrganizer(InventoryHolder holder) {
     	// check if the holder is a container
     	if (holder instanceof Container) {
         	Container container = (Container) holder;

@@ -62,7 +62,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
         ItemStack playerStack;
         InventoryAction action = click.getAction();
 
-        if (isOrganizer(clickedHolder) && (action == InventoryAction.PLACE_ALL || action == InventoryAction.PLACE_ONE || action == InventoryAction.PLACE_SOME)) {
+        if (clickedHolder.equals(holder) && (action == InventoryAction.PLACE_ALL || action == InventoryAction.PLACE_ONE || action == InventoryAction.PLACE_SOME)) {
             // We are placing stuff, so the interesting (being placed) items are on hand (cursor)
             playerStack = click.getCursor();
         } else if (clickedHolder instanceof Player && (action == InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
@@ -147,7 +147,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
                 	continue;
                 }
 
-                Container candidate = isSuitable(targetLoc.getBlock().getState(), material);
+                Container candidate = isSuitableReceiver(targetLoc.getBlock().getState(), material);
                 if (candidate != null) {
                     double distance = chestLocation.distance(targetLoc);
                     if (distance < bestDistance) {
@@ -196,7 +196,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param mat   Item to look for
      * @return A suitable chest (as InventoryHolder), or null if it wasn't suitable
      */
-    private Container isSuitable(BlockState block, Material mat) {
+    private Container isSuitableReceiver(BlockState block, Material mat) {
     	// TODO: add array of accepted types of containers instead (just like we check it for the source)
         if (block instanceof Container) {
             Container container = (Container) block;

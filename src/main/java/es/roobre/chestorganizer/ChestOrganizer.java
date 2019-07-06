@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 public final class ChestOrganizer extends JavaPlugin implements Listener {
     private Logger log = getLogger();
+    private Cache cache = new Cache();
 
     // TODO: move these configs out to a config file
     private static final int RANGE_HORIZONTAL = 8;
@@ -33,7 +34,6 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         log.info("ChestOrganizer enabled, registering listeners...");
-
         getServer().getPluginManager().registerEvents(this, this);
     }
 
@@ -142,6 +142,16 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @return A suitable holder, null if none
      */
     private Container findSuitable(Location chestLocation, Material material) {
+        Location cachedLoc = this.cache.get(chestLocation, material);
+        if (cachedLoc != null) {
+            Container cachedReceiver = isSuitableReceiver(cachedLoc.getBlock().getState(), material);
+            if (cachedReceiver != null) {
+                return cachedReceiver;
+            } else {
+                this.cache.remove(chestLocation, material);
+            }
+        }
+
         Container bestCandidate = null;
         double bestDistance = Double.POSITIVE_INFINITY;
 
@@ -161,6 +171,10 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
                     }
                 }
             }
+        }
+
+        if (bestCandidate != null) {
+            this.cache.put(chestLocation, material, bestCandidate.getLocation());
         }
 
         return bestCandidate;

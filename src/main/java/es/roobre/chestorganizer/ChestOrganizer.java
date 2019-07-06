@@ -118,7 +118,8 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
         getServer().getScheduler().runTask(
                 this,
                 () -> {
-                    ItemStack notAdded = targetChest.getInventory().addItem(items).get(0);
+                    ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
+                    log.info("Could not add: " + notAdded);
                     int notRemoved = removeItems(container.getInventory(), items.getType(), items.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
 
                     log.info("Moved " + items.getAmount() + " " + items.getType() + " from " + container.getBlock().getLocation() + " to " + targetChest.getBlock().getLocation());

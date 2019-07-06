@@ -21,8 +21,8 @@ Download latest release from the *Releases* tab and place it into the `plugins` 
 
 This was tested (although not extensively) in the following configurations:
 
-| Server | Version |
-|--------|---------|
-| Spigot | 1.14.3  |
+| Server | Version | ? |
+|--------|---------|---|
+| Spigot | 1.14.3  | ✅ |
 
 Other bukkit-compliant servers and minecraft versions will probably work too, since the plugin does not use any exotic API.

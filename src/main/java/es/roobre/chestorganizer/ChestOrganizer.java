@@ -93,10 +93,14 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
             return;
         }
 
+        // TODO: Drag events are broken, as a workaround, cancel the event
+        drag.setCancelled(true);
+        return;
+
         // There is probably a more efficient way to do this, but drag events are quite rare, so honestly i wont bother
-        for (ItemStack items : drag.getNewItems().values()) {
-            organize((Chest) holder, items);
-        }
+//        for (ItemStack items : drag.getNewItems().values()) {
+//            organize((Chest) holder, items);
+//        }
     }
 
     /**
@@ -119,7 +123,6 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
                 this,
                 () -> {
                     ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
-                    log.info("Could not add: " + notAdded);
                     int notRemoved = removeItems(container.getInventory(), items.getType(), items.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
 
                     log.info("Moved " + items.getAmount() + " " + items.getType() + " from " + container.getBlock().getLocation() + " to " + targetChest.getBlock().getLocation());

@@ -27,7 +27,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
 	private Logger log = getLogger();
 
 	// TODO: move these configs out to a config file
-    private static final int RANGE_HORIZONTAL = 5;
+    private static final int RANGE_HORIZONTAL = 8;
     private static final int RANGE_VERTICAL = 1;
 
     private static final Set<Material> ACTIVATOR_MATERIALS = Stream.of(Material.REDSTONE_BLOCK).collect(Collectors.toSet());    

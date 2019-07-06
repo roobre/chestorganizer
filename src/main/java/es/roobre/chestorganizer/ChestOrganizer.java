@@ -24,19 +24,19 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ChestOrganizer extends JavaPlugin implements Listener {
-	private Logger log = getLogger();
+    private Logger log = getLogger();
 
-	// TODO: move these configs out to a config file
+    // TODO: move these configs out to a config file
     private static final int RANGE_HORIZONTAL = 8;
     private static final int RANGE_VERTICAL = 1;
 
-    private static final Set<Material> ACTIVATOR_MATERIALS = Stream.of(Material.REDSTONE_BLOCK).collect(Collectors.toSet());    
+    private static final Set<Material> ACTIVATOR_MATERIALS = Stream.of(Material.REDSTONE_BLOCK).collect(Collectors.toSet());
     private static final Set<Material> ACTIVATOR_CONTAINERS = Stream.of(Material.CHEST).collect(Collectors.toSet());
 
     @Override
     public void onEnable() {
         log.info("ChestOrganizer enabled, registering listeners...");
-        
+
         getServer().getPluginManager().registerEvents(this, this);
     }
 
@@ -44,19 +44,19 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
     public void onInventoryClick(InventoryClickEvent click) {
         // Get currently open inventory
         InventoryHolder holder = click.getInventory().getHolder();
-        
+
         if (!(isOrganizer(holder))) {
             return;
         }
 
         // Get clicked inventory (which can be a player's, if they shift-clicked an item
         Inventory clickedInventory = click.getClickedInventory();
-        
+
         // Should not happen but just to make the linter happy
         if (clickedInventory == null) {
-        	return; 
+            return;
         }
-        
+
         InventoryHolder clickedHolder = clickedInventory.getHolder();
 
         ItemStack playerStack;
@@ -73,13 +73,13 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
         }
 
         if (playerStack == null) {
-        	return;
+            return;
         }
-        
+
         ItemStack depositedStack = playerStack.clone();
 
         if (action == InventoryAction.PLACE_ONE) {
-        	depositedStack.setAmount(1);
+            depositedStack.setAmount(1);
         }
 
         organize((Container) holder, depositedStack);
@@ -120,9 +120,9 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
                 () -> {
                     ItemStack notAdded = targetChest.getInventory().addItem(items).get(0);
                     int notRemoved = removeItems(container.getInventory(), items.getType(), items.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
-                    
+
                     log.info("Moved " + items.getAmount() + " " + items.getType() + " from " + container.getBlock().getLocation() + " to " + targetChest.getBlock().getLocation());
-                    
+
                     if (notRemoved != 0) {
                         log.warning("Player cheated: Could not remove " + notRemoved + " " + items.getType() + " from " + container);
                     }
@@ -144,7 +144,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
             for (int deltaZ = -RANGE_HORIZONTAL; deltaZ <= RANGE_HORIZONTAL; deltaZ++) {
                 Location targetLoc = new Location(chestLocation.getWorld(), 0, 0, 0).add(chestLocation).add(deltaX, 0, deltaZ);
                 if (chestLocation.equals(targetLoc)) {
-                	continue;
+                    continue;
                 }
 
                 Container candidate = isSuitableReceiver(targetLoc.getBlock().getState(), material);
@@ -173,16 +173,16 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      */
     private static int removeItems(Inventory src, Material type, int amount) {
         List<ItemStack> stackList = src.all(type).values().stream()
-        		.sorted(Comparator.comparingInt(ItemStack::getAmount))
-        		.collect(Collectors.toList());
-        
+                .sorted(Comparator.comparingInt(ItemStack::getAmount))
+                .collect(Collectors.toList());
+
         for (ItemStack stack : stackList) {
             int toRemove = Math.min(amount, stack.getAmount());
             stack.setAmount(stack.getAmount() - toRemove);
             amount -= toRemove;
 
             if (amount == 0) {
-            	break; // We are done removing
+                break; // We are done removing
             }
         }
 
@@ -197,16 +197,16 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @return A suitable chest (as InventoryHolder), or null if it wasn't suitable
      */
     private static Container isSuitableReceiver(BlockState block, Material mat) {
-    	// TODO: add array of accepted types of containers instead (just like we check it for the source)
+        // TODO: add array of accepted types of containers instead (just like we check it for the source)
         if (block instanceof Container) {
             Container container = (Container) block;
-            
+
             if (!container.isLocked() && container.getInventory().contains(mat)) {
                 // isSimilar
                 return container;
             }
         }
-        
+
         return null;
     }
 
@@ -217,13 +217,13 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @return Whether the chest is an organizer or not
      */
     private static boolean isOrganizer(InventoryHolder holder) {
-    	// check if the holder is a container
-    	if (holder instanceof Container) {
-        	Container container = (Container) holder;
+        // check if the holder is a container
+        if (holder instanceof Container) {
+            Container container = (Container) holder;
 
             return ACTIVATOR_MATERIALS.contains(container.getLocation().subtract(0, 1, 0).getBlock().getBlockData().getMaterial()) && ACTIVATOR_CONTAINERS.contains(container.getBlock().getType());
-    	}
-    	
-    	return false;
+        }
+
+        return false;
     }
 }

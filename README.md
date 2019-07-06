@@ -1,6 +1,6 @@
 # 📦 ChestOrganizer
 
-![Build status](https://api.travis-ci.org/roobre/chestorganizer.svg?branch=master)
+[![Build status](https://api.travis-ci.org/roobre/chestorganizer.svg?branch=master)](https://travis-ci.org/roobre/chestorganizer)
 
 ChestOrganizer is a plugin for bukkit and bukkit-compatible minecraft servers that allows players to create special chests, which distribute items to other nearby containers automatically.
 

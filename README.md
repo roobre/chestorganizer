@@ -1,4 +1,4 @@
-# 📦 ChestOrganizer
+# <img alt="📦" src="https://raw.githubusercontent.com/roobre/chestorganizer/master/etc/assets/icon.png" height="30" /> ChestOrganizer
 
 [![Build status](https://api.travis-ci.org/roobre/chestorganizer.svg?branch=master)](https://travis-ci.org/roobre/chestorganizer)
 

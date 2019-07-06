@@ -79,7 +79,11 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
             depositedStack.setAmount(1);
         }
 
-        organize((Container) holder, depositedStack);
+        try {
+            organize((Container) holder, depositedStack);
+        } catch (NoReceiverException e) {
+            click.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -106,14 +110,14 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param container Original target of the items
      * @param items     Items to move
      */
-    private void organize(Container container, ItemStack items) {
+    private void organize(Container container, ItemStack items) throws NoReceiverException {
         if (!isOrganizer(container)) {
             return;
         }
 
         Container targetChest = findSuitable(container.getLocation(), items.getType());
         if (targetChest == null) {
-            return;
+            throw new NoReceiverException();
         }
 
         getServer().getScheduler().runTask(

@@ -91,55 +91,43 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param container Original target of the items
      */
     private void organize(Container container) {
-        if (!isOrganizer(container)) {
-            return;
+        getServer().getScheduler().runTask(this, () -> this.asyncOrganize(container));
+    }
+
+    private synchronized void asyncOrganize(Container container) {
+        List<ItemStack> removeList = new ArrayList<>();
+
+        for (ItemStack items : container.getInventory()) {
+            if (items == null || items.getType() == Material.AIR || items.getAmount() <= 0) {
+                continue;
+            }
+
+            Container targetChest = findSuitable(container.getLocation(), items.getType());
+            if (targetChest == null) {
+                continue;
+            }
+
+            // Add items and get those which could not be added
+            ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
+
+            // Create a stack of items to be removed, set its amount to the actually added items
+            ItemStack toRemove = items.clone();
+            toRemove.setAmount(toRemove.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
+            if (toRemove.getAmount() > 0) {
+                removeList.add(toRemove);
+            }
+
+            log.info("Moved " + (toRemove.getAmount()) + " " + items.getType() + " to " + targetChest.getLocation());
         }
 
-        getServer().getScheduler().runTask(
-                this,
-                () -> {
-                    try {
-                        this.mutex.acquire();
+        for (ItemStack toRemove : removeList) {
+            // Remove added items and check if we could not remove any
+            int notRemoved = Util.removeItems(container.getInventory(), toRemove);
 
-                        List<ItemStack> removeList = new ArrayList<>();
-
-                        for (ItemStack items : container.getInventory()) {
-                            if (items == null || items.getType() == Material.AIR || items.getAmount() <= 0) {
-                                continue;
-                            }
-
-                            Container targetChest = findSuitable(container.getLocation(), items.getType());
-                            if (targetChest == null) {
-                                continue;
-                            }
-
-                            // Add items and get those which could not be added
-                            ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
-
-                            // Create a stack of items to be removed, set its amount to the actually added items
-                            ItemStack toRemove = items.clone();
-                            toRemove.setAmount(toRemove.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
-                            if (toRemove.getAmount() > 0) {
-                                removeList.add(toRemove);
-                            }
-
-                            log.info("Moved " + (toRemove.getAmount()) + " " + items.getType() + " to " + targetChest.getLocation());
-                        }
-
-                        for (ItemStack toRemove : removeList) {
-                            // Remove added items and check if we could not remove any
-                            int notRemoved = Util.removeItems(container.getInventory(), toRemove);
-
-                            if (notRemoved != 0) {
-                                log.warning("Player cheated: Could not remove " + notRemoved + " " + toRemove.getType() + " from " + container);
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        log.warning("Organizer thread was interrupted");
-                    } finally {
-                        this.mutex.release();
-                    }
-                });
+            if (notRemoved != 0) {
+                log.warning("Player cheated: Could not remove " + notRemoved + " " + toRemove.getType() + " from " + container);
+            }
+        }
     }
 
     /**

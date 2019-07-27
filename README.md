@@ -24,5 +24,6 @@ This was tested (although not extensively) in the following configurations:
 | Server | Version | ? |
 |--------|---------|---|
 | Spigot | 1.14.3  | ✅ |
+| Spigot | 1.14.4  | ✅ |
 
 Other bukkit-compliant servers and minecraft versions will probably work too, since the plugin does not use any exotic API.

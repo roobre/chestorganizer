@@ -97,28 +97,26 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
     private synchronized void asyncOrganize(Container container) {
         List<ItemStack> removeList = new ArrayList<>();
 
-        for (ItemStack items : container.getInventory()) {
-            if (items == null || items.getType() == Material.AIR || items.getAmount() <= 0) {
-                continue;
-            }
+        Stream.of(container.getInventory().getStorageContents())
+                .filter(i -> i != null && i.getType() != Material.AIR && i.getAmount() > 0)
+                .forEach(items -> {
+                    Container targetChest = findSuitable(container.getLocation(), items.getType());
+                    if (targetChest == null) {
+                        return;
+                    }
 
-            Container targetChest = findSuitable(container.getLocation(), items.getType());
-            if (targetChest == null) {
-                continue;
-            }
+                    // Add items and get those which could not be added
+                    ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
 
-            // Add items and get those which could not be added
-            ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
+                    // Create a stack of items to be removed, set its amount to the actually added items
+                    ItemStack toRemove = items.clone();
+                    toRemove.setAmount(toRemove.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
+                    if (toRemove.getAmount() > 0) {
+                        removeList.add(toRemove);
+                    }
 
-            // Create a stack of items to be removed, set its amount to the actually added items
-            ItemStack toRemove = items.clone();
-            toRemove.setAmount(toRemove.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
-            if (toRemove.getAmount() > 0) {
-                removeList.add(toRemove);
-            }
-
-            log.info("Moved " + (toRemove.getAmount()) + " " + items.getType() + " to " + targetChest.getLocation());
-        }
+                    log.info("Moved " + (toRemove.getAmount()) + " " + items.getType() + " to " + targetChest.getLocation());
+                });
 
         for (ItemStack toRemove : removeList) {
             // Remove added items and check if we could not remove any

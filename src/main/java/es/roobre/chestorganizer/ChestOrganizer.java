@@ -18,7 +18,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,8 +32,6 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
 
     private static final Set<Material> ACTIVATOR_MATERIALS = Stream.of(Material.REDSTONE_BLOCK).collect(Collectors.toSet());
     private static final Set<Material> ACTIVATOR_CONTAINERS = Stream.of(Material.CHEST).collect(Collectors.toSet());
-
-    private Semaphore mutex = new Semaphore(1);
 
     @Override
     public void onEnable() {

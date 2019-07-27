@@ -39,4 +39,8 @@ public class Util {
 
         return amount;
     }
+
+    protected static int removeItems(Inventory src, ItemStack items) {
+        return removeItems(src, items.getType(), items.getAmount());
+    }
 }

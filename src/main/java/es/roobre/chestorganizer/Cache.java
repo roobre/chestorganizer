@@ -12,19 +12,15 @@ import java.util.Map;
  */
 class Cache {
     private static long MAX_AGE = 30 * 60 * 1000; // 30 minutes
-    private Map<Location, Map<Material, CacheEntry<Location>>> holder;
-
-    Cache() {
-        this.holder = new HashMap<>();
-    }
+    private Map<Location, Map<Material, CacheEntry<Location>>> holder = new HashMap<>();
 
     synchronized Location get(Location organizerLocation, Material material) {
         Map<Material, CacheEntry<Location>> materialMap = this.holder.get(organizerLocation);
         if (materialMap != null) {
-            CacheEntry<Location> item = materialMap.get(material);
-            if (item != null && item.time + MAX_AGE > System.currentTimeMillis()) {
+            CacheEntry<Location> entry = materialMap.get(material);
+            if (entry != null && entry.time + MAX_AGE > System.currentTimeMillis()) {
                 // Still valid
-                return item.item;
+                return entry.item;
             } else {
                 this.remove(organizerLocation, material);
                 return null;

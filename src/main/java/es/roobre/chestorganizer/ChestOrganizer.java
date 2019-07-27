@@ -97,7 +97,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
         Stream.of(container.getInventory().getStorageContents())
                 .filter(i -> i != null && i.getType() != Material.AIR && i.getAmount() > 0)
                 .forEach(items -> {
-                    Container targetChest = findSuitable(container.getLocation(), items.getType());
+                    Container targetChest = findSuitableWithCache(container.getLocation(), items.getType());
                     if (targetChest == null) {
                         return;
                     }
@@ -132,7 +132,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      * @param material      Material to look for
      * @return A suitable holder, null if none
      */
-    private Container findSuitable(Location chestLocation, Material material) {
+    private Container findSuitableWithCache(Location chestLocation, Material material) {
         Location cachedLoc = this.cache.get(chestLocation, material);
         if (cachedLoc != null) {
             Container cachedReceiver = isSuitableReceiver(cachedLoc.getBlock().getState(), material);
@@ -143,6 +143,15 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
             }
         }
 
+        Container bestCandidate = findSuitable(chestLocation, material);
+        if (bestCandidate != null) {
+            this.cache.put(chestLocation, material, bestCandidate.getLocation());
+        }
+
+        return bestCandidate;
+    }
+
+    private Container findSuitable(Location chestLocation, Material material) {
         Container bestCandidate = null;
         double bestDistance = Double.POSITIVE_INFINITY;
 
@@ -162,10 +171,6 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
                     }
                 }
             }
-        }
-
-        if (bestCandidate != null) {
-            this.cache.put(chestLocation, material, bestCandidate.getLocation());
         }
 
         return bestCandidate;

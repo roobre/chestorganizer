@@ -83,7 +83,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
     }
 
     /**
-     * If supplied chest is an organizer, move the given stack of items to the closest suitable receiver, if any
+     * Moves items from the specified containers to nearby containers that already have instances of those items
      *
      * @param container Original target of the items
      */
@@ -91,9 +91,16 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
         getServer().getScheduler().runTask(this, () -> this.asyncOrganize(container));
     }
 
+    /**
+     * Moves items from the specified containers to nearby containers that already have instances of those items.
+     * Synchronized method to be scheduled after event completion.
+     *
+     * @param container Original target of the items
+     */
     private synchronized void asyncOrganize(Container container) {
         List<ItemStack> removeList = new ArrayList<>();
 
+        // Find movable items in container
         Stream.of(container.getInventory().getStorageContents())
                 .filter(i -> i != null && i.getType() != Material.AIR && i.getAmount() > 0)
                 .forEach(items -> {
@@ -115,6 +122,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
                     log.info("Moved " + (toRemove.getAmount()) + " " + items.getType() + " to " + targetChest.getLocation());
                 });
 
+        // Remove items from original container
         for (ItemStack toRemove : removeList) {
             // Remove added items and check if we could not remove any
             int notRemoved = Util.removeItems(container.getInventory(), toRemove);
@@ -126,7 +134,8 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
     }
 
     /**
-     * Returns the closest holder to location which already contains at least one item of the given material
+     * Returns the closest holder to location which already contains at least one item of the given material.
+     * This method will use the location cache to speed up expensive check in all nearby positions
      *
      * @param chestLocation Central location to search from
      * @param material      Material to look for
@@ -151,6 +160,13 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
         return bestCandidate;
     }
 
+    /**
+     * Finds and returns the closest holder to location which already contains at least one item of the given material.
+     *
+     * @param chestLocation Central location to search from
+     * @param material      Material to look for
+     * @return A suitable holder, null if none
+     */
     private Container findSuitable(Location chestLocation, Material material) {
         Container bestCandidate = null;
         double bestDistance = Double.POSITIVE_INFINITY;
@@ -181,7 +197,7 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
      *
      * @param block Entity to check
      * @param mat   Item to look for
-     * @return A suitable chest (as InventoryHolder), or null if it wasn't suitable
+     * @return A suitable chest (as Container), or null if it wasn't suitable
      */
     private Container isSuitableReceiver(BlockState block, Material mat) {
         // TODO: add array of accepted types of containers instead (just like we check it for the source)

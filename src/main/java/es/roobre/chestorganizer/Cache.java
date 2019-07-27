@@ -12,17 +12,17 @@ import java.util.Map;
  */
 class Cache {
     private static long MAX_AGE = 30 * 60 * 1000; // 30 minutes
-    private Map<Location, Map<Material, CacheItem<Location>>> holder;
+    private Map<Location, Map<Material, CacheEntry<Location>>> holder;
 
     Cache() {
         this.holder = new HashMap<>();
     }
 
     synchronized Location get(Location organizerLocation, Material material) {
-        Map<Material, CacheItem<Location>> materialMap = this.holder.get(organizerLocation);
+        Map<Material, CacheEntry<Location>> materialMap = this.holder.get(organizerLocation);
         if (materialMap != null) {
-            CacheItem<Location> item = materialMap.get(material);
-            if (item.time + MAX_AGE > System.currentTimeMillis()) {
+            CacheEntry<Location> item = materialMap.get(material);
+            if (item != null && item.time + MAX_AGE > System.currentTimeMillis()) {
                 // Still valid
                 return item.item;
             } else {
@@ -35,23 +35,28 @@ class Cache {
     }
 
     synchronized Location put(Location organizerLocation, Material material, Location receiverLocation) {
-        Map<Material, CacheItem<Location>> materialMap = this.holder.computeIfAbsent(organizerLocation, k -> new HashMap<>());
-        return materialMap.put(material, new CacheItem<>(receiverLocation)).item;
+        Map<Material, CacheEntry<Location>> materialMap = this.holder.computeIfAbsent(organizerLocation, k -> new HashMap<>());
+        CacheEntry<Location> putLoc = materialMap.put(material, new CacheEntry<>(receiverLocation));
+        if (putLoc == null) {
+            return null;
+        }
+
+        return putLoc.item;
     }
 
     synchronized void remove(Location organizerLocation, Material material) {
-        Map<Material, CacheItem<Location>> materialMap = this.holder.get(organizerLocation);
+        Map<Material, CacheEntry<Location>> materialMap = this.holder.get(organizerLocation);
         if (materialMap != null) {
             materialMap.remove(material);
         }
     }
 }
 
-class CacheItem<T> {
-    T item;
+class CacheEntry<T> {
+    final T item;
     long time;
 
-    CacheItem(T item) {
+    CacheEntry(T item) {
         this.item = item;
         this.time = System.currentTimeMillis();
     }

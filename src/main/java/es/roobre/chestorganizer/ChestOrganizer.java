@@ -15,6 +15,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -41,49 +43,32 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
     public void onInventoryClick(InventoryClickEvent click) {
         // Get currently open inventory
         InventoryHolder holder = click.getInventory().getHolder();
-
         if (!(isOrganizer(holder))) {
             return;
         }
 
         // Get clicked inventory (which can be a player's, if they shift-clicked an item
         Inventory clickedInventory = click.getClickedInventory();
-
-        // Should not happen but just to make the linter happy
         if (clickedInventory == null) {
             return;
         }
 
         InventoryHolder clickedHolder = clickedInventory.getHolder();
+        if (clickedHolder == null) {
+            return;
+        }
 
-        ItemStack playerStack;
         InventoryAction action = click.getAction();
 
-        if (clickedHolder.equals(holder) && (action == InventoryAction.PLACE_ALL || action == InventoryAction.PLACE_ONE || action == InventoryAction.PLACE_SOME)) {
-            // We are placing stuff, so the interesting (being placed) items are on hand (cursor)
-            playerStack = click.getCursor();
-        } else if (clickedHolder instanceof Player && (action == InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
-            // We are moving (shift-clicking) items, so interesting ones are on slot
-            playerStack = click.getCurrentItem();
-        } else {
+        if (
+                !(clickedHolder.equals(holder) && (action == InventoryAction.PLACE_ALL || action == InventoryAction.PLACE_ONE || action == InventoryAction.PLACE_SOME)) && // We are placing stuff, so the interesting (being placed) items are on hand (cursor)
+                        !(clickedHolder instanceof Player && (action == InventoryAction.MOVE_TO_OTHER_INVENTORY)) && // We are moving (shift-clicking) items, so interesting ones are on slot
+                        !(!click.getClick().isLeftClick() && click.getClick().isRightClick()) // Middle click on inventory
+        ) {
             return;
         }
 
-        if (playerStack == null) {
-            return;
-        }
-
-        ItemStack depositedStack = playerStack.clone();
-
-        if (action == InventoryAction.PLACE_ONE) {
-            depositedStack.setAmount(1);
-        }
-
-        try {
-            organize((Container) holder, depositedStack);
-        } catch (NoReceiverException e) {
-            click.setCancelled(true);
-        }
+        organize((Container) holder);
     }
 
     @EventHandler
@@ -94,44 +79,50 @@ public final class ChestOrganizer extends JavaPlugin implements Listener {
             return;
         }
 
-        // TODO: Drag events are broken, as a workaround, cancel the event
-        drag.setCancelled(true);
-        return;
-
-        // There is probably a more efficient way to do this, but drag events are quite rare, so honestly i wont bother
-//        for (ItemStack items : drag.getNewItems().values()) {
-//            organize((Chest) holder, items);
-//        }
+        organize((Container) holder);
     }
 
     /**
      * If supplied chest is an organizer, move the given stack of items to the closest suitable receiver, if any
      *
      * @param container Original target of the items
-     * @param items     Items to move
      */
-    private void organize(Container container, ItemStack items) throws NoReceiverException {
-        if (!isOrganizer(container)) {
-            return;
-        }
+    private void organize(Container container) {
+        getServer().getScheduler().runTask(this, () -> this.asyncOrganize(container));
+    }
 
-        Container targetChest = findSuitable(container.getLocation(), items.getType());
-        if (targetChest == null) {
-            throw new NoReceiverException();
-        }
+    private synchronized void asyncOrganize(Container container) {
+        List<ItemStack> removeList = new ArrayList<>();
 
-        getServer().getScheduler().runTask(
-                this,
-                () -> {
-                    ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
-                    int notRemoved = Util.removeItems(container.getInventory(), items.getType(), items.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
-
-                    log.info("Moved " + items.getAmount() + " " + items.getType() + " from " + container.getBlock().getLocation() + " to " + targetChest.getBlock().getLocation());
-
-                    if (notRemoved != 0) {
-                        log.warning("Player cheated: Could not remove " + notRemoved + " " + items.getType() + " from " + container);
+        Stream.of(container.getInventory().getStorageContents())
+                .filter(i -> i != null && i.getType() != Material.AIR && i.getAmount() > 0)
+                .forEach(items -> {
+                    Container targetChest = findSuitable(container.getLocation(), items.getType());
+                    if (targetChest == null) {
+                        return;
                     }
+
+                    // Add items and get those which could not be added
+                    ItemStack notAdded = targetChest.getInventory().addItem(items.clone()).get(0);
+
+                    // Create a stack of items to be removed, set its amount to the actually added items
+                    ItemStack toRemove = items.clone();
+                    toRemove.setAmount(toRemove.getAmount() - (notAdded == null ? 0 : notAdded.getAmount()));
+                    if (toRemove.getAmount() > 0) {
+                        removeList.add(toRemove);
+                    }
+
+                    log.info("Moved " + (toRemove.getAmount()) + " " + items.getType() + " to " + targetChest.getLocation());
                 });
+
+        for (ItemStack toRemove : removeList) {
+            // Remove added items and check if we could not remove any
+            int notRemoved = Util.removeItems(container.getInventory(), toRemove);
+
+            if (notRemoved != 0) {
+                log.warning("Player cheated: Could not remove " + notRemoved + " " + toRemove.getType() + " from " + container);
+            }
+        }
     }
 
     /**
